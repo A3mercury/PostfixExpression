@@ -27,30 +27,15 @@ string define(string readline, char& key)
 	return op;
 }
 
-void duplicate(string& op, int position)
-{
-	string temp;
-	if (op[position] == '!')
-	{
-		temp = op.substr(0, position);
-		op = temp + ' ' + op[position] + op.substr(position + 2);
-	}
-}
-
-void swap(string& op, int position)
-{
-	char temp;
-	if (op[position] == '%')
-	{
-		temp = op[position - 2];
-		op[position - 2] = op[position - 1];
-		op[position - 1] = temp;
-	}
-}
-
 float convertToNumber(char x)
 {
 	float result = x - (float)48;
+	return result;
+}
+
+float convertStringToNumber(string x);
+{
+	float result = strtof(x);
 	return result;
 }
 
@@ -58,23 +43,11 @@ string cleanUpString(string equation)
 {
 	for (int i = 0; i < equation.length(); i++)
 	{
-		if (equation[i] == '\"' || equation[i] == ' ')
+		if (equation[i] == '\"')
 		{
 			equation = equation.erase(i, 1);
 			i--;
 		}
-	}
-	return equation;
-}
-
-string finalString(string equation)
-{
-	for (int i = 0; i < equation.length(); i++)
-	{
-		if (equation[i] == '!')
-			duplicate(equation, i);
-		else if (equation[i] == '%')
-			swap(equation, i);
 	}
 	return equation;
 }
@@ -91,13 +64,27 @@ float evaluate(string readline, string op , char key)
 	string sTemp = readline.substr(0, keyPosition);
 	string fullEquation = sTemp + op + readline.substr(keyPosition + 1);
 	fullEquation = cleanUpString(fullEquation);
-	fullEquation = finalString(fullEquation);
-
+	string partialNum;
 
 	for (unsigned int i = 0; i < fullEquation.length(); i++)
 	{
+		// if a number is larger that 9
+		if (fullEquation[i] >= 48 && fullEquation[i] <= 57 &&
+			(fullEquation[i + 1] >= 48 && fullEquation[i + 1] <= 57))
+		{
+			partialNum = fullEquation.substr(i, 1);
+			for (unsigned int j = i; j < fullEquation.length() - i; j++)
+			{
+				if (fullEquation[j + 1] >= 48 && fullEquation[j + 1] <= 57)
+					partialNum.append(fullEquation.substr(j + 1, 1));
+				else
+					break;
+			}
+			convertedNumber = convertStringToNumber(partialNum);
+			Stack.push(convertedNumber);
+		}
 		// if readline[i] is a between ascii 48-57 (a number)
-		if (fullEquation[i] >= 48 && fullEquation[i] <= 57)
+		else if (fullEquation[i] >= 48 && fullEquation[i] <= 57)
 		{
 			// function returns a float that is the value of the operator string
 			convertedNumber = convertToNumber(fullEquation[i]);
@@ -105,7 +92,7 @@ float evaluate(string readline, string op , char key)
 		}
 		else
 		{
-			if (fullEquation[i] != '%' && fullEquation[i] != '!')
+			if (fullEquation[i] != '%' && fullEquation[i] != '!' && fullEquation[i] != ' ')
 			{
 				temp = Stack.top();
 				Stack.pop();
@@ -133,6 +120,20 @@ float evaluate(string readline, string op , char key)
 					temp = Stack.top() / temp;
 					Stack.pop();
 					Stack.push(temp);
+				}
+			}
+			else
+			{
+				if (fullEquation[i] == '!')
+					Stack.push(Stack.top());
+				else if (fullEquation[i] == '%')
+				{
+					temp = Stack.top();
+					Stack.pop();
+					float temp2 = Stack.top();
+					Stack.pop();
+					Stack.push(temp);
+					Stack.push(temp2);
 				}
 			}
 		}
